@@ -1,0 +1,31 @@
+.section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.table {
+    width: 50%;
+}
+.tableCell {
+    border: 1px solid black;
+    width: 10%;
+    /* padding: 5px; */
+    /* padding: 10px; */
+    /* display: flex;
+    flex-direction: column; */
+}
+
+.tableRow {
+    background-color: white;
+    /* display: flex; */
+    /* flex-direction: row; */
+}
+
+.saved {
+    color: green;
+}
+
+.failed {
+    color: red;
+}
