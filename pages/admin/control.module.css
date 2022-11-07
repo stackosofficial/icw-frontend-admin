@@ -29,3 +29,8 @@
 .failed {
     color: red;
 }
+
+.saveLogout {
+    display: flex;
+    justify-content: space-between;
+}

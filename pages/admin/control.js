@@ -2,7 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import styles from './control.module.css'
 import { useRouter } from 'next/router';
-import { categoriesList } from '../../components/common';
+import { categoriesList, clientSendToken } from '../../components/common';
 import Modal from 'react-modal';
 
     const customStyles = {
@@ -27,8 +27,9 @@ export default function Control({NEXT_PUBLIC_BE_URL})
     var [filteredEvents, setFilteredEvents] = useState([]);
     const [isSaveDisabled, setSaveDisabled] = useState(false);
     const [delModalData, setDelModal] = useState({});
-
+    const [password, setPassword] = useState('');
     const router = useRouter();
+
     const [eventChanges, setEventChanges] = useState({
         updatedEvents: {},
         addedEvents: {},
@@ -67,6 +68,9 @@ export default function Control({NEXT_PUBLIC_BE_URL})
             if(filterOptions.to && (!event.to || !compareField(filterOptions.to, event.to))) {
                 return false;
             }
+            if(filterOptions.createdDate && (!event.createdDate || !compareField(filterOptions.createdDate, event.createdDate))) {
+                return false;
+            }
             if(filterOptions.venue && (!event.venue || !compareField(filterOptions.venue, event.venue))) {
                 return false;
             }
@@ -92,12 +96,34 @@ export default function Control({NEXT_PUBLIC_BE_URL})
         filterEvents({}, newEventList);
     }
 
-    const getAllEvents = () => {
+    const getAllEvents = async (passwordParam) => {
         setSaveDisabled(true);
-        axios.get(`${NEXT_PUBLIC_BE_URL}/admin`).then((res) => {
+
+        let sendToken = await fetchToken();
+        let sendPass = password;
+
+        if(!sendPass) {
+            sendPass = passwordParam;
+        }
+        console.log("sendToken: ", sendToken);
+
+        axios.post(`${NEXT_PUBLIC_BE_URL}/admin/events`,
+            {
+                auth: {
+                    token: clientSendToken(sendPass, sendToken)
+                }
+            }
+        ).then((res) => {
             console.log("events: ",JSON.stringify(res.data));
-            setEventsFunc(res.data);
             setSaveDisabled(false);
+            if(res && res.data && res.data.success) {
+                setEventsFunc(res.data.eventList);
+                
+            }
+            if(res && res.data && res.data.reason) {
+                setError(res.data.reason);
+            }
+
         })
         .catch((err)=> {
             setSaveDisabled(false);
@@ -107,8 +133,11 @@ export default function Control({NEXT_PUBLIC_BE_URL})
         });
     }
 
-    const callModifyAPI = () => {
-        console.log("eventChanges: ", eventChanges);
+    const callModifyAPI = async () => {
+
+        let sendToken = await fetchToken();
+
+        console.log("sendToken: ", sendToken);
         if(!Object.keys(eventChanges.updatedEvents).length
           &&  !Object.keys(eventChanges.addedEvents).length
           && !eventChanges.deletedEvents.length
@@ -121,7 +150,12 @@ export default function Control({NEXT_PUBLIC_BE_URL})
         setError('');
         setSaveDisabled(true);
 
-        axios.post(`${NEXT_PUBLIC_BE_URL}/admin`, eventChanges)
+        axios.post(`${NEXT_PUBLIC_BE_URL}/admin/modify-events`, {
+            auth: {
+                token: clientSendToken(password, sendToken)
+            },
+            modifiedEvents: eventChanges
+        })
         .then((res) => {
             setSaveDisabled(false);
             if(res && res.data && res.data.success) {
@@ -218,8 +252,76 @@ export default function Control({NEXT_PUBLIC_BE_URL})
         setDelModal({});
     }
 
+    var download = function () {
+        writeFile('test.txt', "tsfsdfsdfsdfsf", err => {
+            if (err) {
+              console.error(err);
+            }
+            // file written successfully
+          });
+    };
+
+    const logout = async () => {
+
+        const sendToken = await fetchToken();
+
+        axios.post(`${NEXT_PUBLIC_BE_URL}/admin/logout`, {
+            auth: {
+                token: clientSendToken(password, sendToken)
+            }
+        })
+        .then((res) => {
+            if(res && res.data && res.data.success) {
+                setSuccess('successfully logged out');
+                console.log("Successfully logged out");
+            }
+            if(res && res.data && res.data.reason) {
+                setError(res.data.reason);
+            }
+        })
+        .catch((err) => {
+            console.error(err);
+            setError('An error occured when sending logout request');
+        })
+    }
+
+    const fetchToken = async () => {
+        const res = await axios.get(`${NEXT_PUBLIC_BE_URL}/admin/token`);
+        if(res && res.data && res.data.success) {
+            console.log("res auth: ", res.data.auth.token);
+        }
+        else {
+            if(res && res.data && res.data.reason) {
+                setError(res.data.reason);
+            }
+            else {
+                setError('Failed to validate token.')
+            }
+        }
+
+        return res.data.auth.token;
+    }
+
     useEffect(() => {
-        getAllEvents()
+        const run = async () => {
+            try {
+                const sessionPassword = sessionStorage.getItem("password");
+
+                if(!sessionPassword) {
+                    setError('Password is invalid. Please log in.');
+                    return;
+                }
+
+                await setPassword(sessionPassword);
+
+                getAllEvents( sessionPassword);
+
+            } catch(error) {
+                console.error(error);
+                setError("An Error occured");
+            }
+        };
+        run();
     }, []);
 
     const renderEvents = ()=> {
@@ -271,6 +373,9 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                         />
                     </td>
                     <td className={styles.tableCell}>
+                        <span>{event.createdDate}</span>
+                    </td>
+                    <td className={styles.tableCell}>
                         <select name="category"
                             value={event.category ? event.category : ''}
                             onChange={(e) => saveModifiedEvent(index, event, {category: e.target.value})}
@@ -284,6 +389,7 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                             }
                         </select>
                     </td>
+                    
                     <td className={styles.tableCell}>
                         <input type='text'
                             value={event.senderIP ? event.senderIP : ''}
@@ -308,6 +414,20 @@ export default function Control({NEXT_PUBLIC_BE_URL})
     console.log('restart');
     return (
         <div>
+            {/* {
+                <Modal
+                isOpen={delModalData.isOpen}
+                style={customStyles}>
+                    <div>
+                        <div>Do you want to delete?</div>
+                        <div>
+                            <input type='text' onChange={(e) => setDeleteReason(e.target.value)}/>
+                            <button onClick={deleteModalClickYes}>YES</button>
+                            <button onClick={deleteModalClickNo}>NO</button>
+                        </div>
+                    </div>
+                </Modal>
+            } */}
             {
                 <Modal
                     isOpen={delModalData.isOpen}
@@ -323,15 +443,20 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                 </Modal>
             }
             <div className={styles.section}>
-                <div>
-                    <button onClick={callModifyAPI} disabled={isSaveDisabled}>SAVE</button>
-                    {
-                        isError ?
-                            <span className={styles.failed}>{isError}</span>
-                        : !isError && isSuccess? 
-                        <span className={styles.saved}> Saved</span>
-                        : ''
-                    }
+                <div className={styles.saveLogout}>
+                    <div>
+                        <button onClick={callModifyAPI} disabled={isSaveDisabled}>SAVE</button>
+                        {
+                            isError ?
+                                <span className={styles.failed}>{isError}</span>
+                            : !isError && isSuccess? 
+                            <span className={styles.saved}> Saved</span>
+                            : ''
+                        }
+                    </div>
+                    <div>
+                        <button onClick={download}>Download</button>
+                    </div>
                 </div>
                 <div>
                     <table className={styles.table}>
@@ -374,6 +499,12 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                                         />
                                 </th>
                                 <th className={styles.tableCell}>
+                                    CreatedDate
+                                    <input type='text'
+                                        onChange={(e) => filterEvents({createdDate: e.target.value})}
+                                    />
+                                </th>
+                                <th className={styles.tableCell}>
                                     Category
                                     <input type='text'
                                         onChange={(e) => filterEvents({category: e.target.value})}
@@ -400,7 +531,7 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                     </table>
                 </div>
                 <div>
-                    <button onClick={addEvent} disabled={true}>ADD EVENT</button>
+                    <button onClick={addEvent}>ADD EVENT</button>
                 </div>
             </div>
         </div>
