@@ -59,6 +59,9 @@ export default function Control({NEXT_PUBLIC_BE_URL})
             if(filterOptions.name && (!event.name || !compareField(filterOptions.name, event.name))) {
                 return false;
             }
+            if(filterOptions.contact && (!event.contact || !compareField(filterOptions.contact, event.contact))) {
+                return false;
+            }
             if(filterOptions.link && (!event.link || !compareField(filterOptions.link, event.link))) {
                 return false;
             }
@@ -81,6 +84,9 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                 return false;
             }
             if(filterOptions.createdByEmail && (!event.createdByEmail || !compareField(filterOptions.createdByEmail, event.createdByEmail))) {
+                return false;
+            }
+            if(filterOptions.phoneNo && (!event.phoneNo || !compareField(filterOptions.phoneNo, event.phoneNo))) {
                 return false;
             }
             return true;
@@ -349,6 +355,13 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                         />
                     </td>
                     <td className={styles.tableCell}>
+                        <textarea
+                            rows="1"
+                            value={event.contact ? event.contact : ''}
+                            onChange={(e) => saveModifiedEvent(index, event, {contact: e.target.value})}
+                        />
+                    </td>
+                    <td className={styles.tableCell}>
                         <input type='datetime-local'
                             value={event.from ? event.from : ''}
                             onChange={(e) => saveModifiedEvent(index, event, {from: e.target.value})}
@@ -370,6 +383,12 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                         <input type='text'
                         value={event.createdByEmail ? event.createdByEmail : ''}
                         onChange={(e) => saveModifiedEvent(index, event, {createdByEmail: e.target.value})}
+                        />
+                    </td>
+                    <td className={styles.tableCell}>
+                        <input type='text'
+                        value={event.phoneNo ? event.phoneNo : ''}
+                        onChange={(e) => saveModifiedEvent(index, event, {phoneNo: e.target.value})}
                         />
                     </td>
                     <td className={styles.tableCell}>
@@ -477,6 +496,12 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                                         />
                                 </th>
                                 <th className={styles.tableCell}>
+                                    Contact
+                                    <input type='text'
+                                        onChange={(e) => filterEvents({contact: e.target.value})}
+                                        />
+                                </th>
+                                <th className={styles.tableCell}>
                                     From(YYYY-MM-DDtHH-MM)
                                     <input type='text'
                                         onChange={(e) => filterEvents({from: e.target.value})}
@@ -496,6 +521,11 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                                 <th className={styles.tableCell}>CreatedBy
                                     <input type='text'
                                         onChange={(e) => filterEvents({createdByEmail: e.target.value})}
+                                        />
+                                </th>
+                                <th className={styles.tableCell}>PhoneNo
+                                    <input type='text'
+                                        onChange={(e) => filterEvents({phoneNo: e.target.value})}
                                         />
                                 </th>
                                 <th className={styles.tableCell}>
