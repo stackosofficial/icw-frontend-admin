@@ -1,0 +1,53 @@
+name: Docker Image - Build & Push
+
+on:
+  push:
+    branches: staging
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  ################################################################################ BUILD & PUSH
+  docker-image:
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.image-tag.outputs.tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - if: ${{ github.ref == 'refs/heads/master' }}
+        name: Bump version and push tag
+        uses: anothrNick/github-tag-action@1.40.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+          WITH_V: false
+
+      - id: image-tag
+        run: |
+          if [ ${{ github.ref }} == 'refs/heads/master' ]; then
+            echo "::set-output name=tag::$(git describe --tags $(git rev-list --tags --max-count=1))"
+          elif [ ${{ github.ref }} == 'refs/heads/staging' ]; then
+            echo "::set-output name=tag::staging-$(git rev-parse --short HEAD)"
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Build & push image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./dockerfile
+          tags: stackos/${{ secrets.PROJECT_NAME }}:${{ steps.image-tag.outputs.tag }}
+          push: true
