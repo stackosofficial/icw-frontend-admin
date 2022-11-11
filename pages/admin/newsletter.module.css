@@ -1,0 +1,22 @@
+.table {
+    width: 50%;
+}
+
+.tableCell {
+    border: 1px solid black;
+    width: 10%;
+}
+
+.section {
+    display: flex;
+    flex-direction: row;
+}
+
+.tableSection {
+    width :50%;
+}
+
+.textSection {
+    width: 50%;
+}
+

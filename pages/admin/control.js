@@ -4,6 +4,7 @@ import styles from './control.module.css'
 import { useRouter } from 'next/router';
 import { categoriesList, clientSendToken } from '../../components/common';
 import Modal from 'react-modal';
+import Link from 'next/link';
 
     const customStyles = {
         content: {
@@ -362,13 +363,13 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                         />
                     </td>
                     <td className={styles.tableCell}>
-                        <input type='datetime-local'
+                        <input type='date'
                             value={event.from ? event.from : ''}
                             onChange={(e) => saveModifiedEvent(index, event, {from: e.target.value})}
                         />
                     </td>
                     <td className={styles.tableCell}>
-                        <input type='datetime-local'
+                        <input type='date'
                         value={event.to ? event.to : ''}
                         onChange={(e) => saveModifiedEvent(index, event, {to: e.target.value})}
                         />
@@ -377,6 +378,12 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                         <input type='text'
                         value={event.venue ? event.venue : ''}
                         onChange={(e) => saveModifiedEvent(index, event, {venue: e.target.value})}
+                        />
+                    </td>
+                    <td className={styles.tableCell}>
+                        <input type='text'
+                        value={event.price ? event.price : ''}
+                        onChange={(e) => saveModifiedEvent(index, event, {price: e.target.value})}
                         />
                     </td>
                     <td className={styles.tableCell}>
@@ -399,6 +406,7 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                             value={event.category ? event.category : ''}
                             onChange={(e) => saveModifiedEvent(index, event, {category: e.target.value})}
                             >
+                                <option value="" disabled selected>select</option>
                             {
                                 categoriesList.map((category) => {
                                     return (
@@ -474,6 +482,9 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                         }
                     </div>
                     <div>
+                        <Link href='newsletter'> Newsletter </Link>
+                    </div>
+                    <div>
                         <button onClick={download}>Download</button>
                     </div>
                 </div>
@@ -517,6 +528,8 @@ export default function Control({NEXT_PUBLIC_BE_URL})
                                     <input type='text'
                                         onChange={(e) => filterEvents({venue: e.target.value})}
                                         />
+                                </th>
+                                <th className={styles.tableCell}>Price (INR)
                                 </th>
                                 <th className={styles.tableCell}>CreatedBy
                                     <input type='text'
