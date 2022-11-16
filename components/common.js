@@ -1,11 +1,13 @@
 import {AES, enc} from 'crypto-js';
+
 export const categoriesList = [
     "Meetup",
     "Workshop",
     "Conference",
     "Talks & Networking",
     "Networking & After-party",
-];
+    "Hackathon"
+]
 
 const reverse = (str) => {
     const arr = str.split("");
